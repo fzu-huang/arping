@@ -11,7 +11,7 @@ import (
 func TestPingWithInvalidIP(t *testing.T) {
 	ip := net.ParseIP("invalid")
 
-	_, _, err := Ping(ip)
+	_, _, err := Ping(ip, nil)
 	if err == nil {
 		t.Error("error expected")
 	}
@@ -22,7 +22,7 @@ func TestPingWithInvalidIP(t *testing.T) {
 func TestPingWithV6IP(t *testing.T) {
 	ip := net.ParseIP("fe80::e2cb:4eff:fed5:ca4e")
 
-	_, _, err := Ping(ip)
+	_, _, err := Ping(ip, nil)
 	if err == nil {
 		t.Error("error expected")
 	}
@@ -58,7 +58,7 @@ func TestGoroutinesDoesNotLeak(t *testing.T) {
 
 	spawnNumGoroutines := 5
 	for i := 0; i < spawnNumGoroutines; i++ {
-		_, _, err := Ping(ip)
+		_, _, err := Ping(ip, nil)
 		if err != ErrTimeout {
 			t.Fatalf("timeout error expected, but not received - received err: %v", err)
 		}

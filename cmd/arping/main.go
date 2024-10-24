@@ -1,24 +1,23 @@
-//
 // command line arping utility which use the 'arping' library
 //
 // this utility need raw socket access, please run it
-//   under FreeBSD: as root
-//   under Linux: as root or with 'cap_net_raw' permission: sudo setcap cap_net_raw+ep <ARPING_PATH>
 //
+//	under FreeBSD: as root
+//	under Linux: as root or with 'cap_net_raw' permission: sudo setcap cap_net_raw+ep <ARPING_PATH>
 //
 // options:
-//   -h: print help and exit
-//   -v: verbose output
-//   -U: unsolicited/gratuitous ARP mode
-//   -i: interface name to use
-//   -t: timeout - duration with unit - such as 100ms, 500ms, 1s ...
 //
+//	-h: print help and exit
+//	-v: verbose output
+//	-U: unsolicited/gratuitous ARP mode
+//	-i: interface name to use
+//	-t: timeout - duration with unit - such as 100ms, 500ms, 1s ...
 //
 // exit code:
-//    0: target online
-//    1: target offline
-//    2: error occurred - see command output
 //
+//	0: target online
+//	1: target offline
+//	2: error occurred - see command output
 package main
 
 import (
@@ -67,9 +66,9 @@ func main() {
 		}
 	} else {
 		if len(*ifaceNameFlag) > 0 {
-			hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, *ifaceNameFlag)
+			hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, nil, *ifaceNameFlag)
 		} else {
-			hwAddr, durationNanos, err = arping.Ping(dstIP)
+			hwAddr, durationNanos, err = arping.Ping(dstIP, nil)
 		}
 	}
 

@@ -2,60 +2,57 @@
 //
 // The currently supported platforms are: Linux and BSD.
 //
-//
 // The library requires raw socket access. So it must run as root, or with appropriate capabilities under linux:
 // `sudo setcap cap_net_raw+ep <BIN>`.
 //
-//
 // Examples:
 //
-//   ping a host:
-//   ------------
-//     package main
-//     import ("fmt"; "github.com/j-keck/arping"; "net")
+//	ping a host:
+//	------------
+//	  package main
+//	  import ("fmt"; "github.com/j-keck/arping"; "net")
 //
-//     func main(){
-//       dstIP := net.ParseIP("192.168.1.1")
-//       if hwAddr, duration, err := arping.Ping(dstIP); err != nil {
-//         fmt.Println(err)
-//       } else {
-//         fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
-//       }
-//     }
-//
-//
-//   resolve mac address:
-//   --------------------
-//     package main
-//     import ("fmt"; "github.com/j-keck/arping"; "net")
-//
-//     func main(){
-//       dstIP := net.ParseIP("192.168.1.1")
-//       if hwAddr, _, err := arping.Ping(dstIP); err != nil {
-//         fmt.Println(err)
-//       } else {
-//         fmt.Printf("%s is at %s\n", dstIP, hwAddr)
-//       }
-//     }
+//	  func main(){
+//	    dstIP := net.ParseIP("192.168.1.1")
+//	    if hwAddr, duration, err := arping.Ping(dstIP); err != nil {
+//	      fmt.Println(err)
+//	    } else {
+//	      fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
+//	    }
+//	  }
 //
 //
-//   check if host is online:
-//   ------------------------
-//     package main
-//     import ("fmt"; "github.com/j-keck/arping"; "net")
+//	resolve mac address:
+//	--------------------
+//	  package main
+//	  import ("fmt"; "github.com/j-keck/arping"; "net")
 //
-//     func main(){
-//       dstIP := net.ParseIP("192.168.1.1")
-//       _, _, err := arping.Ping(dstIP)
-//       if err == arping.ErrTimeout {
-//         fmt.Println("offline")
-//       }else if err != nil {
-//         fmt.Println(err.Error())
-//       }else{
-//         fmt.Println("online")
-//       }
-//     }
+//	  func main(){
+//	    dstIP := net.ParseIP("192.168.1.1")
+//	    if hwAddr, _, err := arping.Ping(dstIP); err != nil {
+//	      fmt.Println(err)
+//	    } else {
+//	      fmt.Printf("%s is at %s\n", dstIP, hwAddr)
+//	    }
+//	  }
 //
+//
+//	check if host is online:
+//	------------------------
+//	  package main
+//	  import ("fmt"; "github.com/j-keck/arping"; "net")
+//
+//	  func main(){
+//	    dstIP := net.ParseIP("192.168.1.1")
+//	    _, _, err := arping.Ping(dstIP)
+//	    if err == arping.ErrTimeout {
+//	      fmt.Println("offline")
+//	    }else if err != nil {
+//	      fmt.Println(err.Error())
+//	    }else{
+//	      fmt.Println("online")
+//	    }
+//	  }
 package arping
 
 import (
@@ -77,7 +74,7 @@ var (
 )
 
 // Ping sends an arp ping to 'dstIP'
-func Ping(dstIP net.IP) (net.HardwareAddr, time.Duration, error) {
+func Ping(dstIP, srcIP net.IP) (net.HardwareAddr, time.Duration, error) {
 	if err := validateIP(dstIP); err != nil {
 		return nil, 0, err
 	}
@@ -86,11 +83,11 @@ func Ping(dstIP net.IP) (net.HardwareAddr, time.Duration, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	return PingOverIface(dstIP, *iface)
+	return PingOverIface(dstIP, srcIP, *iface)
 }
 
 // PingOverIfaceByName sends an arp ping over interface name 'ifaceName' to 'dstIP'
-func PingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
+func PingOverIfaceByName(dstIP, srcIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
 	if err := validateIP(dstIP); err != nil {
 		return nil, 0, err
 	}
@@ -99,19 +96,23 @@ func PingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time
 	if err != nil {
 		return nil, 0, err
 	}
-	return PingOverIface(dstIP, *iface)
+	return PingOverIface(dstIP, srcIP, *iface)
 }
 
 // PingOverIface forcedly sends an arp ping over interface 'iface' to 'dstIP'
-func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
-	if err := validateIP(dstIP); err != nil {
+func PingOverIface(dstIP, srcIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
+	err := validateIP(dstIP)
+	if err != nil {
 		return nil, 0, err
 	}
 
 	srcMac := iface.HardwareAddr
-	srcIP, err := findIPInNetworkFromIface(dstIP, iface, true)
-	if err != nil {
-		return nil, 0, err
+
+	if srcIP == nil {
+		srcIP, err = findIPInNetworkFromIface(dstIP, iface, true)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	broadcastMac := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
