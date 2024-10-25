@@ -146,6 +146,17 @@ func PingOverIface(dstIP, srcIP net.IP, iface net.Interface) (net.HardwareAddr, 
 					return
 				}
 
+				if srcIP.Equal(net.IPv4zero) || srcIP.Equal(net.IPv6zero) {
+					// if arping with src IP as IPv4zero, we expect no response but request from dst IP
+					if response.IsDuplicateRequestOf(request) {
+						duration := receiveTime.Sub(sendTime)
+						verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
+							response.SenderIP(), response.SenderMac())
+						pingResultChan <- PingResult{response.SenderMac(), duration, err}
+						return
+					}
+				}
+
 				if response.IsResponseOf(request) {
 					duration := receiveTime.Sub(sendTime)
 					verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
