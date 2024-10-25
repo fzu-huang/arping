@@ -78,7 +78,7 @@ func (datagram arpDatagram) IsResponseOf(request arpDatagram) bool {
 }
 
 func (datagram arpDatagram) IsDuplicateRequestOf(request arpDatagram) bool {
-	return datagram.oper == requestOper && bytes.Equal(request.spa, datagram.tpa) &&
+	return datagram.oper == requestOper && bytes.Equal(request.tpa, datagram.spa) &&
 		bytes.Equal(request.tpa, datagram.tpa)
 }
 
