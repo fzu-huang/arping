@@ -73,8 +73,8 @@ func (datagram arpDatagram) SenderMac() net.HardwareAddr {
 }
 
 func (datagram arpDatagram) IsResponseOf(request arpDatagram) bool {
-	return datagram.oper == responseOper && bytes.Equal(request.spa, datagram.tpa) &&
-		bytes.Equal(request.tpa, datagram.spa)
+	return datagram.oper == responseOper && bytes.Equal(request.tpa, datagram.spa) &&
+		bytes.Equal(request.spa, datagram.tpa)
 }
 
 func (datagram arpDatagram) IsResponseOfTarget(request arpDatagram) bool {
@@ -82,15 +82,16 @@ func (datagram arpDatagram) IsResponseOfTarget(request arpDatagram) bool {
 }
 
 // IsDuplicateRequestOf case: Cisco switch will re-send an ARP request when it received a DAD-ARP request
-func (datagram arpDatagram) IsDuplicateRequestOf(request arpDatagram) bool {
+func (datagram arpDatagram) IsDuplicateRequestOf(request arpDatagram, ignoreCheck bool) bool {
 	return datagram.oper == requestOper && bytes.Equal(request.tpa, datagram.spa) &&
-		bytes.Equal(request.tpa, datagram.tpa)
+		(!ignoreCheck && bytes.Equal(request.tpa, datagram.tpa))
 }
 
 // IsResponseOfDADRequest case: H3C switch will reply DAD ARP request when it received a DAD-ARP request
-func (datagram arpDatagram) IsResponseOfDADRequest(request arpDatagram) bool {
-	return datagram.oper == responseOper && bytes.Equal(request.tpa, datagram.tpa) &&
-		bytes.Equal(request.tpa, datagram.spa)
+func (datagram arpDatagram) IsResponseOfDADRequest(request arpDatagram, ignoreCheck bool) bool {
+	return datagram.oper == responseOper && bytes.Equal(request.tpa, datagram.spa) &&
+		(!ignoreCheck && bytes.Equal(request.tpa, datagram.tpa))
+
 }
 
 func parseArpDatagram(buffer []byte) arpDatagram {
