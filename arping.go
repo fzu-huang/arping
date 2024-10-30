@@ -74,7 +74,7 @@ var (
 )
 
 // Ping sends an arp ping to 'dstIP'
-func Ping(dstIP, srcIP net.IP) (net.HardwareAddr, time.Duration, error) {
+func Ping(dstIP, srcIP net.IP, ignoreAddrMatch bool) (net.HardwareAddr, time.Duration, error) {
 	if err := validateIP(dstIP); err != nil {
 		return nil, 0, err
 	}
@@ -83,11 +83,11 @@ func Ping(dstIP, srcIP net.IP) (net.HardwareAddr, time.Duration, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	return PingOverIface(dstIP, srcIP, *iface)
+	return PingOverIface(dstIP, srcIP, *iface, ignoreAddrMatch)
 }
 
 // PingOverIfaceByName sends an arp ping over interface name 'ifaceName' to 'dstIP'
-func PingOverIfaceByName(dstIP, srcIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
+func PingOverIfaceByName(dstIP, srcIP net.IP, ifaceName string, ignoreAddrMatch bool) (net.HardwareAddr, time.Duration, error) {
 	if err := validateIP(dstIP); err != nil {
 		return nil, 0, err
 	}
@@ -96,11 +96,12 @@ func PingOverIfaceByName(dstIP, srcIP net.IP, ifaceName string) (net.HardwareAdd
 	if err != nil {
 		return nil, 0, err
 	}
-	return PingOverIface(dstIP, srcIP, *iface)
+	return PingOverIface(dstIP, srcIP, *iface, ignoreAddrMatch)
 }
 
 // PingOverIface forcedly sends an arp ping over interface 'iface' to 'dstIP'
-func PingOverIface(dstIP, srcIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
+func PingOverIface(dstIP, srcIP net.IP, iface net.Interface, ignoreAddrMatch bool) (
+	net.HardwareAddr, time.Duration, error) {
 	err := validateIP(dstIP)
 	if err != nil {
 		return nil, 0, err
@@ -146,9 +147,17 @@ func PingOverIface(dstIP, srcIP net.IP, iface net.Interface) (net.HardwareAddr, 
 					return
 				}
 
+				if ignoreAddrMatch && response.IsResponseOfTarget(request) {
+					duration := receiveTime.Sub(sendTime)
+					verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
+						response.SenderIP(), response.SenderMac())
+					pingResultChan <- PingResult{response.SenderMac(), duration, err}
+					return
+				}
+
 				if srcIP.Equal(net.IPv4zero) || srcIP.Equal(net.IPv6zero) {
 					// if arping with src IP as IPv4zero, we expect no response but request from dst IP
-					if response.IsDuplicateRequestOf(request) {
+					if response.IsDuplicateRequestOf(request) || response.IsResponseOfDADRequest(request) {
 						duration := receiveTime.Sub(sendTime)
 						verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
 							response.SenderIP(), response.SenderMac())

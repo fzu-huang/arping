@@ -66,9 +66,9 @@ func main() {
 		}
 	} else {
 		if len(*ifaceNameFlag) > 0 {
-			hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, nil, *ifaceNameFlag)
+			hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, nil, *ifaceNameFlag, false)
 		} else {
-			hwAddr, durationNanos, err = arping.Ping(dstIP, nil)
+			hwAddr, durationNanos, err = arping.Ping(dstIP, nil, false)
 		}
 	}
 
